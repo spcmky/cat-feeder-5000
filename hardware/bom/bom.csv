@@ -1,0 +1,22 @@
+qty,component,unit_cost_usd,total_cost_usd,supplier_notes,category
+1,Raspberry Pi Zero 2 W,15.00,15.00,Adafruit / PiShop,compute
+1,Arduino Nano (clone OK),5.00,5.00,Amazon / AliExpress,compute
+1,EM4095 RFID analog front end (SOIC-16),3.00,3.00,Mouser / DigiKey — EM4095HMSO/V; alt: TMS3705 (TI) for dedicated 134.2 kHz,rfid
+1,"Magnet wire 28 AWG, 10m",2.00,2.00,For winding 134.2 kHz flat antenna coil (~12cm dia, 15 turns),rfid
+1,Tuning capacitor assortment (100pF–10nF),1.00,1.00,For LC tank resonance at 134.2 kHz; calc value after measuring coil L,rfid
+1,Pi Camera Module V2 (or V3),25.00,25.00,Adafruit / Amazon — wide angle preferred,camera
+1,SG90 micro servo,3.00,3.00,For swing-up gate actuation,actuation
+1,"N20 gear motor 60 RPM 6V, or NEMA14 stepper",8.00,8.00,N20 for simple DC; NEMA14 for precise portion control,actuation
+1,"Motor driver (A4988 or L298N module)",3.00,3.00,A4988 for stepper; L298N for DC,actuation
+1,Active buzzer 5V,1.00,1.00,Through-hole; 5V active,audio
+1,"USB-C power supply 5V 3A",10.00,10.00,Powers Pi + Arduino; quality supply important,power
+1,Micro SD card 32GB,8.00,8.00,For Pi OS + SQLite database,storage
+1,"Logic level converter 4-channel (optional)",1.50,1.50,Not needed for EM4095 (5V) but useful for other sensors,misc
+1,"M3 heat-set inserts, 50 pack",6.00,6.00,McMaster-Carr or Amazon,mechanical
+1,"M3 screws assorted 100 pack (6mm + 10mm)",5.00,5.00,Amazon,mechanical
+1,"Food-grade PETG filament 1kg",25.00,25.00,eSUN or Polymaker food-safe PETG — main body / bowl,3d_print
+1,"TPU 95A filament 200g",8.00,8.00,Gate bumper + feet,3d_print
+1,"Silicone bowl liner (optional)",5.00,5.00,Replaceable food-contact surface,optional
+1,"Wire assortment + JST connectors",10.00,10.00,Misc wiring harness,misc
+,,,,TOTAL PER FEEDER:,
+,,,,~$145–175 depending on sourcing,
