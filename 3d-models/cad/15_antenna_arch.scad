@@ -1,97 +1,111 @@
-// Cat Feeder 5000 — Part 15: Antenna Arch Housing (Front-Mounted Halo)
+// Cat Feeder 5000 — Part 15: Antenna Arch (Round Halo)
 //
-// This is the RFID "doorway" the cat walks through to reach the bowl.
-// It bolts to the FRONT FACE of the main body, straddling the approach
-// opening. The two legs sit on either side of the opening, and the bridge
-// spans overhead. The flat coil sits in a channel in the bridge,
-// positioned directly above the cat's shoulders as it eats.
+// A semicircular arch the cat walks through — the RFID coil follows
+// the round shape, creating an ideal field pattern for reading the
+// implanted chip between the cat's shoulders.
 //
-// Viewed from front:
+// Front view:
 //
-//     ┌──────────────── bridge (coil inside) ────────────────┐
-//     │                                                       │
-//     │   leg                                           leg   │
-//     │   │                                             │     │
-//     │   │         ← cat walks through here →          │     │
-//     │   │                                             │     │
-//     └───┘                                             └─────┘
-//    ─────── floor ──────────────────────────────────────────────
+//          ╭───────────────╮        ← round arch (coil inside tube)
+//         ╱                 ╲
+//        │                   │
+//        │    CAT WALKS HERE  │     ← 130mm clear width
+//        │                   │
+//        ┴─┬─┘             └─┬─┴   ← mounting feet (bolt to floor)
 //
-// The arch extends FORWARD from the body face (into Y-negative space)
-// so the cat passes under it before reaching the bowl inside.
+// The halo stands at the front face of the body. Its back surface
+// is flush with Y=0 (body front face). The gate is further INSIDE
+// the body (~40mm deep) — well behind the halo reading zone.
 //
-// Print: PETG, 0.2mm layers, 25% infill, no supports. Print UPRIGHT.
+// The coil channel runs through the entire arch (both legs and the
+// semicircular top). Cable exits through the left foot.
+//
+// Print: PETG, 0.2mm layers, 25% infill, supports for arch overhang.
+// Print upright (feet on bed) — the arch overhang needs support.
 
 include <params.scad>
 
-// ── Arch geometry ─────────────────────────────────────────────────────────────
-// The arch straddles the approach opening (APPROACH_W = 130 in main body).
-// Legs sit outside the opening on either side.
-LEG_W       = 15;           // Leg wall thickness (left-right)
-LEG_D       = 35;           // Leg depth (extends forward from body face)
-LEG_H       = 140;          // Leg height (floor to underside of bridge)
-BRIDGE_H    = 30;           // Bridge height (thickness of overhead section)
-BRIDGE_SPAN = 160;          // Full span including legs (= UNIT_W)
-BRIDGE_D    = LEG_D;        // Bridge depth matches leg depth
-CABLE_D     = 5;            // Cable routing channel
+// ── Halo geometry ───────────────────────────────────────────────────────────
+HALO_CLEAR_W  = 130;           // Inner clear width between legs (for cat)
+HALO_TUBE_OD  = 24;            // Outer diameter of the tube cross-section
+HALO_TUBE_WALL = 4;            // Tube wall thickness
+HALO_TUBE_ID  = HALO_TUBE_OD - 2*HALO_TUBE_WALL;  // 16mm coil channel
+
+// Leg geometry
+HALO_LEG_H    = 77;            // Straight leg height (floor to arch start)
+
+// Arch geometry (semicircular, connects leg tops)
+// Radius measured center-of-arch to center-of-tube-cross-section.
+// This equals half the distance between leg tube centers.
+HALO_ARCH_R   = HALO_CLEAR_W / 2;  // 65mm
+
+// Total width = HALO_CLEAR_W + HALO_TUBE_OD = 154mm (fits inside UNIT_W=160)
+HALO_TOTAL_W  = HALO_CLEAR_W + HALO_TUBE_OD;
+
+// Mounting feet
+FOOT_W        = 30;            // Foot width (X)
+FOOT_D        = 35;            // Foot depth (Y, extends forward from body face)
+FOOT_H        = 5;             // Foot thickness (Z)
+
+// Cable exit
+CABLE_CH_D    = 6;             // Cable channel diameter
 
 color(COL_RFID) antenna_arch();
 
 module antenna_arch() {
-    WT = THIN_WALL;
-    CCW = COIL_CH_W;
-    CCD = COIL_CH_D;
-    INNER_SPAN = BRIDGE_SPAN - 2*LEG_W;  // Clear span cat walks through
-
     difference() {
         union() {
-            // ── Left leg ─────────────────────────────────────────────────
-            translate([0, 0, 0])
-                fillet_box(LEG_W, LEG_D, LEG_H + BRIDGE_H, r=3);
+            // ── Left leg (vertical tube) ─────────────────────────────────
+            translate([HALO_TUBE_OD/2, 0, 0])
+                cylinder(d=HALO_TUBE_OD, h=HALO_LEG_H);
 
-            // ── Right leg ────────────────────────────────────────────────
-            translate([BRIDGE_SPAN - LEG_W, 0, 0])
-                fillet_box(LEG_W, LEG_D, LEG_H + BRIDGE_H, r=3);
+            // ── Right leg (vertical tube) ────────────────────────────────
+            translate([HALO_TOTAL_W - HALO_TUBE_OD/2, 0, 0])
+                cylinder(d=HALO_TUBE_OD, h=HALO_LEG_H);
 
-            // ── Bridge (overhead, connects legs) ─────────────────────────
-            translate([0, 0, LEG_H])
-                fillet_box(BRIDGE_SPAN, BRIDGE_D, BRIDGE_H, r=3);
+            // ── Semicircular arch (top half, connecting leg tops) ────────
+            // rotate_extrude makes a half-torus in XY plane.
+            // rotate([-90,0,0]) stands it up in XZ plane (arching upward).
+            // Center at midpoint between legs, at Z = LEG_H.
+            translate([HALO_TOTAL_W/2, 0, HALO_LEG_H])
+                rotate([-90, 0, 0])
+                    rotate_extrude(angle=180, $fn=96)
+                        translate([HALO_ARCH_R, 0])
+                            circle(d=HALO_TUBE_OD);
+
+            // ── Left mounting foot ──────────────────────────────────────
+            translate([HALO_TUBE_OD/2 - FOOT_W/2, -FOOT_D/2, 0])
+                fillet_box(FOOT_W, FOOT_D, FOOT_H, r=3);
+
+            // ── Right mounting foot ─────────────────────────────────────
+            translate([HALO_TOTAL_W - HALO_TUBE_OD/2 - FOOT_W/2, -FOOT_D/2, 0])
+                fillet_box(FOOT_W, FOOT_D, FOOT_H, r=3);
         }
 
-        // ── Hollow legs (weight reduction, cable routing) ────────────────
-        translate([WT, WT, -0.1])
-            cube([LEG_W - 2*WT, LEG_D - 2*WT, LEG_H + 0.2]);
-        translate([BRIDGE_SPAN - LEG_W + WT, WT, -0.1])
-            cube([LEG_W - 2*WT, LEG_D - 2*WT, LEG_H + 0.2]);
+        // ── Hollow left leg (coil channel) ──────────────────────────────
+        translate([HALO_TUBE_OD/2, 0, -0.1])
+            cylinder(d=HALO_TUBE_ID, h=HALO_LEG_H + 0.2);
 
-        // ── Hollow bridge interior ───────────────────────────────────────
-        translate([LEG_W, WT, LEG_H + WT])
-            cube([INNER_SPAN, BRIDGE_D - 2*WT, BRIDGE_H - 2*WT]);
+        // ── Hollow right leg (coil channel) ─────────────────────────────
+        translate([HALO_TOTAL_W - HALO_TUBE_OD/2, 0, -0.1])
+            cylinder(d=HALO_TUBE_ID, h=HALO_LEG_H + 0.2);
 
-        // ── Coil channel (recessed from top of bridge) ───────────────────
-        // The flat spiral coil sits in this channel. Open top for
-        // coil insertion, then epoxied in place.
-        // Centered horizontally, centered front-to-back in bridge.
-        translate([BRIDGE_SPAN/2 - CCW/2, (BRIDGE_D - CCW)/2,
-                   LEG_H + BRIDGE_H - CCD])
-            cube([CCW, CCW, CCD + 0.1]);
+        // ── Hollow arch (coil channel through semicircle) ───────────────
+        translate([HALO_TOTAL_W/2, 0, HALO_LEG_H])
+            rotate([-90, 0, 0])
+                rotate_extrude(angle=180, $fn=96)
+                    translate([HALO_ARCH_R, 0])
+                        circle(d=HALO_TUBE_ID);
 
-        // ── Cable channel (through left leg, from bridge to base) ────────
-        translate([-0.1, LEG_D/2, LEG_H/2])
-            rotate([0, 90, 0])
-                cylinder(d=CABLE_D, h=LEG_W + 0.2);
-        // Vertical cable path inside left leg
-        translate([LEG_W/2, LEG_D/2, 0])
-            cylinder(d=CABLE_D, h=LEG_H + BRIDGE_H);
+        // ── Cable exit (through left foot, out the bottom) ──────────────
+        translate([HALO_TUBE_OD/2, 0, -0.1])
+            cylinder(d=CABLE_CH_D, h=FOOT_H + 0.2);
 
-        // ── Body mount bolt holes (through leg backs, into body face) ────
-        // 2 bolts per leg, through the rear face (Y = LEG_D side).
-        // These go into M3 inserts in the main body front face.
-        for (z = [LEG_H - 30, LEG_H - 50])
-            translate([LEG_W/2, LEG_D - 0.1, z])
-                rotate([-90, 0, 0]) m3_clear(h=5);
-        for (z = [LEG_H - 30, LEG_H - 50])
-            translate([BRIDGE_SPAN - LEG_W/2, LEG_D - 0.1, z])
-                rotate([-90, 0, 0]) m3_clear(h=5);
+        // ── Mounting bolt holes (vertical, through each foot) ───────────
+        // Two M3 bolts per foot, going into inserts in the body floor.
+        for (x = [HALO_TUBE_OD/2, HALO_TOTAL_W - HALO_TUBE_OD/2])
+            for (dy = [-10, 10])
+                translate([x, dy, -0.1])
+                    m3_clear(h=FOOT_H + 0.2);
     }
 }
