@@ -25,6 +25,25 @@ SERVO_H = 30;            // SG90 servo height
 SERVO_EAR_SPAN = 28;     // SG90 servo ear spacing
 TOLERANCE = 0.1;         // General fit tolerance
 
+// ===== AUGER =====
+AUGER_TUBE_ID = 32;         // Auger tube inner diameter
+AUGER_TUBE_OD = 38;         // Auger tube outer diameter
+AUGER_TUBE_L = 120;         // Auger tube length
+AUGER_PITCH = 20;           // Auger screw thread pitch
+AUGER_ANGLE = 30;           // Auger tube angle from vertical (degrees)
+
+// ===== BOWL =====
+BOWL_FLOOR_W = 100;         // Bowl floor width
+BOWL_FLOOR_D = 90;          // Bowl floor depth
+BOWL_SIDE_H = 25;           // Bowl side wall height
+BOWL_BACK_H = 30;           // Bowl back wall height
+BOWL_FLOOR_T = 3;           // Bowl floor thickness
+BOWL_WALL_T = 2.5;          // Bowl wall thickness
+BOWL_OVERHANG = 15;         // Bowl floor extends past gate plane
+
+// ===== FOOD =====
+COL_FOOD = [0.9, 0.7, 0.3, 0.8]; // Tan — food-contact parts
+
 // ===== RENDER QUALITY =====
 $fn = 64;                // Circle resolution (smooth curves)
 

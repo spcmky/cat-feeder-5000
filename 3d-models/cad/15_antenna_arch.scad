@@ -1,58 +1,97 @@
-// Cat Feeder 5000 — Part 15: Antenna Arch Housing
-// Overhead arch holding flat RFID coil. Coil channel is open-top (no bridging).
-// Antenna reads cat's implanted FDX-B chip as cat's shoulders pass below.
+// Cat Feeder 5000 — Part 15: Antenna Arch Housing (Front-Mounted Halo)
+//
+// This is the RFID "doorway" the cat walks through to reach the bowl.
+// It bolts to the FRONT FACE of the main body, straddling the approach
+// opening. The two legs sit on either side of the opening, and the bridge
+// spans overhead. The flat coil sits in a channel in the bridge,
+// positioned directly above the cat's shoulders as it eats.
+//
+// Viewed from front:
+//
+//     ┌──────────────── bridge (coil inside) ────────────────┐
+//     │                                                       │
+//     │   leg                                           leg   │
+//     │   │                                             │     │
+//     │   │         ← cat walks through here →          │     │
+//     │   │                                             │     │
+//     └───┘                                             └─────┘
+//    ─────── floor ──────────────────────────────────────────────
+//
+// The arch extends FORWARD from the body face (into Y-negative space)
+// so the cat passes under it before reaching the bowl inside.
+//
 // Print: PETG, 0.2mm layers, 25% infill, no supports. Print UPRIGHT.
 
 include <params.scad>
 
+// ── Arch geometry ─────────────────────────────────────────────────────────────
+// The arch straddles the approach opening (APPROACH_W = 130 in main body).
+// Legs sit outside the opening on either side.
+LEG_W       = 15;           // Leg wall thickness (left-right)
+LEG_D       = 35;           // Leg depth (extends forward from body face)
+LEG_H       = 140;          // Leg height (floor to underside of bridge)
+BRIDGE_H    = 30;           // Bridge height (thickness of overhead section)
+BRIDGE_SPAN = 160;          // Full span including legs (= UNIT_W)
+BRIDGE_D    = LEG_D;        // Bridge depth matches leg depth
+CABLE_D     = 5;            // Cable routing channel
+
 color(COL_RFID) antenna_arch();
 
 module antenna_arch() {
-    SPAN   = ARCH_SPAN;    // 160mm
-    AH     = ARCH_H;       // 70mm height of arch above base
-    AD     = ARCH_D;       // 40mm depth
-    WT     = THIN_WALL;    // 2.5mm wall
-    CCW    = COIL_CH_W;    // 16mm coil channel width
-    CCD    = COIL_CH_D;    // 5mm coil channel depth
-    CABLE_D = 5;           // Antenna cable channel diameter
+    WT = THIN_WALL;
+    CCW = COIL_CH_W;
+    CCD = COIL_CH_D;
+    INNER_SPAN = BRIDGE_SPAN - 2*LEG_W;  // Clear span cat walks through
 
     difference() {
         union() {
-            // Left leg
+            // ── Left leg ─────────────────────────────────────────────────
             translate([0, 0, 0])
-                fillet_box(AD, AD, AH + AD, r=4);
-            // Right leg
-            translate([SPAN - AD, 0, 0])
-                fillet_box(AD, AD, AH + AD, r=4);
-            // Top arch bridge
-            translate([0, 0, AH])
-                fillet_box(SPAN, AD, AD, r=4);
+                fillet_box(LEG_W, LEG_D, LEG_H + BRIDGE_H, r=3);
+
+            // ── Right leg ────────────────────────────────────────────────
+            translate([BRIDGE_SPAN - LEG_W, 0, 0])
+                fillet_box(LEG_W, LEG_D, LEG_H + BRIDGE_H, r=3);
+
+            // ── Bridge (overhead, connects legs) ─────────────────────────
+            translate([0, 0, LEG_H])
+                fillet_box(BRIDGE_SPAN, BRIDGE_D, BRIDGE_H, r=3);
         }
 
-        // Hollow legs
+        // ── Hollow legs (weight reduction, cable routing) ────────────────
         translate([WT, WT, -0.1])
-            cube([AD - 2*WT, AD - 2*WT, AH + AD + 0.2]);
-        translate([SPAN - AD + WT, WT, -0.1])
-            cube([AD - 2*WT, AD - 2*WT, AH + AD + 0.2]);
+            cube([LEG_W - 2*WT, LEG_D - 2*WT, LEG_H + 0.2]);
+        translate([BRIDGE_SPAN - LEG_W + WT, WT, -0.1])
+            cube([LEG_W - 2*WT, LEG_D - 2*WT, LEG_H + 0.2]);
 
-        // Hollow bridge interior
-        translate([AD, WT, AH + WT])
-            cube([SPAN - 2*AD, AD - 2*WT, AD]);
+        // ── Hollow bridge interior ───────────────────────────────────────
+        translate([LEG_W, WT, LEG_H + WT])
+            cube([INNER_SPAN, BRIDGE_D - 2*WT, BRIDGE_H - 2*WT]);
 
-        // Coil channel (open top — no perimeters over this in slicer)
-        // Centered horizontally and front-to-back in top bridge
-        translate([SPAN/2 - CCW/2, (AD - CCW)/2, AH + AD - CCD])
+        // ── Coil channel (recessed from top of bridge) ───────────────────
+        // The flat spiral coil sits in this channel. Open top for
+        // coil insertion, then epoxied in place.
+        // Centered horizontally, centered front-to-back in bridge.
+        translate([BRIDGE_SPAN/2 - CCW/2, (BRIDGE_D - CCW)/2,
+                   LEG_H + BRIDGE_H - CCD])
             cube([CCW, CCW, CCD + 0.1]);
 
-        // Antenna cable channel through left leg wall
-        translate([-0.1, AD/2, AH/2])
+        // ── Cable channel (through left leg, from bridge to base) ────────
+        translate([-0.1, LEG_D/2, LEG_H/2])
             rotate([0, 90, 0])
-                cylinder(d=CABLE_D, h=WT + 0.2);
+                cylinder(d=CABLE_D, h=LEG_W + 0.2);
+        // Vertical cable path inside left leg
+        translate([LEG_W/2, LEG_D/2, 0])
+            cylinder(d=CABLE_D, h=LEG_H + BRIDGE_H);
 
-        // Body mount holes — 2× M3 insert per leg base
-        for (x = [AD/2 - 8, AD/2 + 8])
-            translate([x, AD/2, -0.1]) m3_clear(h=8);
-        for (x = [SPAN - AD/2 - 8, SPAN - AD/2 + 8])
-            translate([x, AD/2, -0.1]) m3_clear(h=8);
+        // ── Body mount bolt holes (through leg backs, into body face) ────
+        // 2 bolts per leg, through the rear face (Y = LEG_D side).
+        // These go into M3 inserts in the main body front face.
+        for (z = [LEG_H - 30, LEG_H - 50])
+            translate([LEG_W/2, LEG_D - 0.1, z])
+                rotate([-90, 0, 0]) m3_clear(h=5);
+        for (z = [LEG_H - 30, LEG_H - 50])
+            translate([BRIDGE_SPAN - LEG_W/2, LEG_D - 0.1, z])
+                rotate([-90, 0, 0]) m3_clear(h=5);
     }
 }
