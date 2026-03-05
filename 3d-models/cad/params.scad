@@ -31,6 +31,10 @@ AUGER_TUBE_L = 85;          // Auger tube length
 AUGER_PITCH = 20;           // Auger screw thread pitch
 AUGER_ANGLE = 30;           // Auger tube angle from vertical (degrees)
 
+// ===== ROOF & COUPLING =====
+ROOF_T = 5;                    // Roof thickness (holds M3 inserts)
+AUGER_COUPLING_H = 15;        // Coupling stub above auger flange
+
 // ===== BOWL =====
 BOWL_FLOOR_W = 100;         // Bowl floor width
 BOWL_FLOOR_D = 90;          // Bowl floor depth

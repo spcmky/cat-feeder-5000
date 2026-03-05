@@ -39,16 +39,16 @@ module main_body() {
 
             // ── Bowl shelf ─────────────────────────────────────────────────
             // Low platform in the open front zone for the bowl to sit on
-            fillet_box(UNIT_W, BOWL_SHELF_D, BOWL_SHELF_H, r=4);
+            //fillet_box(UNIT_W, BOWL_SHELF_D, BOWL_SHELF_H, r=4);
 
             // ── Gate side rails ────────────────────────────────────────────
             // Two short vertical walls at the gate position to guide the gate flap.
             // Only as wide as needed for the gate track, not full side walls.
-            rail_h = APPROACH_H;
-            rail_w = 8;
-            for (x = [(UNIT_W - APPROACH_W)/2 - rail_w, (UNIT_W + APPROACH_W)/2])
-                translate([x, GATE_Y - 5, 0])
-                    cube([rail_w, 10, rail_h]);
+            //rail_h = APPROACH_H;
+            //rail_w = 8;
+            //for (x = [(UNIT_W - APPROACH_W)/2 - rail_w, (UNIT_W + APPROACH_W)/2])
+            //    translate([x, GATE_Y - 5, 0])
+            //        cube([rail_w, 10, rail_h]);
 
             // ── Enclosed rear box ──────────────────────────────────────────
             // Full walls and top — houses electronics, auger motor, wiring
@@ -57,8 +57,9 @@ module main_body() {
         }
 
         // ── Hollow out the rear box interior ───────────────────────────────
+        // Leave ROOF_T of solid material at the top for the roof
         translate([WALL, REAR_Y + WALL, FLOOR])
-            fillet_box(UNIT_W - 2*WALL, REAR_D - 2*WALL, UNIT_H, r=2);
+            fillet_box(UNIT_W - 2*WALL, REAR_D - 2*WALL, UNIT_H - FLOOR - ROOF_T, r=2);
 
         // ── Hollow out the bowl shelf interior ─────────────────────────────
         translate([WALL, WALL, FLOOR])
@@ -70,15 +71,6 @@ module main_body() {
         translate([(UNIT_W - APPROACH_W)/2, REAR_Y - 1, FLOOR])
             cube([APPROACH_W, WALL + 2, APPROACH_H]);
 
-        // ── Auger exit hole ────────────────────────────────────────────────
-        translate([UNIT_W/2, BOWL_SHELF_D/2 + WALL, BOWL_SHELF_H - 1])
-            cylinder(d=AUGER_TUBE_OD + 1, h=WALL + 2);
-
-        // ── Auger tube channel ─────────────────────────────────────────────
-        translate([UNIT_W/2, BOWL_SHELF_D + 20, UNIT_H - 30])
-            rotate([AUGER_ANGLE, 0, 0])
-                cylinder(d=AUGER_TUBE_OD + 1, h=UNIT_H);
-
         // ── Electronics bay (rear interior) ────────────────────────────────
         translate([UNIT_W/2 - 45, UNIT_D - 100, FLOOR])
             cube([90, 100 - WALL, 80]);
@@ -89,10 +81,10 @@ module main_body() {
                 cylinder(d=15, h=WALL + 2);
 
         // ── Gate rail slots ────────────────────────────────────────────────
-        for (x = [(UNIT_W - APPROACH_W)/2 + WALL,
-                  (UNIT_W + APPROACH_W)/2 - WALL - GATE_T])
-            translate([x, GATE_Y - GATE_T/2, FLOOR])
-                cube([GATE_T + TOLERANCE, GATE_T + TOLERANCE, APPROACH_H]);
+        //for (x = [(UNIT_W - APPROACH_W)/2 + WALL,
+        //          (UNIT_W + APPROACH_W)/2 - WALL - GATE_T])
+        //    translate([x, GATE_Y - GATE_T/2, FLOOR])
+        //        cube([GATE_T + TOLERANCE, GATE_T + TOLERANCE, APPROACH_H]);
 
         // ── Halo floor mount holes ─────────────────────────────────────────
         halo_offset_x = (UNIT_W - 154) / 2;
@@ -110,10 +102,18 @@ module main_body() {
             translate([x, GATE_Y, APPROACH_H - 5])
                 rotate([-90, 0, 0]) m3_insert(h=8);
 
-        // ── Hopper mount holes (top of rear box) ──────────────────────────
-        for (x = [30, UNIT_W - 30]) for (y = [REAR_Y + 30, UNIT_D - 30])
-            translate([x, y, UNIT_H - 6])
-                m3_insert(h=6.2);
+        // ── Auger tube roof hole ─────────────────────────────────────────
+        // Through-hole in the roof for the auger tube to pass through
+        translate([UNIT_W/2, 165, UNIT_H - ROOF_T - 0.1])
+            cylinder(d=AUGER_TUBE_OD + 1, h=ROOF_T + 0.2);
+
+        // ── Auger flange M3 insert holes (3×, 120° apart) ───────────────
+        // Bolts from the flange pass through these inserts to secure tube to roof
+        for (a = [0, 120, 240])
+            translate([UNIT_W/2, 165, UNIT_H - ROOF_T - 0.1])
+                rotate([0, 0, a])
+                    translate([17, 0, 0])
+                        m3_insert(h=ROOF_T + 0.2);
     }
 
     // ── Interior bosses ────────────────────────────────────────────────────────
@@ -129,8 +129,8 @@ module main_body() {
             boss(d=10, h=10);
 
     // Gate servo bracket bosses (inside rear box, above approach opening)
-    translate([UNIT_W/2, REAR_Y + 10, APPROACH_H + 10])
-        boss(d=10, h=8);
+    //translate([UNIT_W/2, REAR_Y + 10, APPROACH_H + 10])
+    //    boss(d=10, h=8);
 
     // ── Bottom feet pockets ────────────────────────────────────────────────────
     for (x = [15, UNIT_W - 15]) for (y = [15, UNIT_D - 15])

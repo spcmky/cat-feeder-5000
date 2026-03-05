@@ -49,11 +49,11 @@ color(COL_BODY) main_body();
 // ═══════════════════════════════════════════════════════════════════════════
 // HOPPER — sits on top of main body
 // ═══════════════════════════════════════════════════════════════════════════
-translate([15, 100, UNIT_H + 10 + EXPLODE * 2])
+translate([15, 100, UNIT_H + 5 + EXPLODE * 2])
     color(COL_FOOD) hopper();
 
-// HOPPER LID
-translate([15, 100, UNIT_H + 10 + 130 + EXPLODE * 4])
+// HOPPER LID — sits on hopper lip (sleeve + funnel height)
+translate([15, 100, UNIT_H + 5 + AUGER_COUPLING_H + 130 + EXPLODE * 4])
     color(COL_FOOD) hopper_lid();
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,8 +62,10 @@ translate([15, 100, UNIT_H + 10 + 130 + EXPLODE * 4])
 // ═══════════════════════════════════════════════════════════════════════════
 _auger_x = UNIT_W/2;
 _auger_y = 100 + 130/2;         // Hopper center Y (shifted back)
-_auger_top = UNIT_H + 10;       // Tube top raised above body
-_auger_bot = _auger_top - AUGER_TUBE_L;  // Bottom of tube
+// Flange bottom sits on roof at Z=UNIT_H
+// Flange is at local Z=(AUGER_TUBE_L-5)..AUGER_TUBE_L → global Z=160..165
+// Coupling stub: global Z=165..180
+_auger_bot = UNIT_H - (AUGER_TUBE_L - 5);  // = 80
 
 translate([_auger_x, _auger_y, _auger_bot]) {
     color(COL_FOOD) auger_tube();
