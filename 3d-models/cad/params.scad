@@ -27,7 +27,7 @@ TOLERANCE = 0.1;         // General fit tolerance
 // ===== AUGER =====
 AUGER_TUBE_ID = 32;         // Auger tube inner diameter
 AUGER_TUBE_OD = 38;         // Auger tube outer diameter
-AUGER_TUBE_L = 120;         // Auger tube length
+AUGER_TUBE_L = 85;          // Auger tube length
 AUGER_PITCH = 20;           // Auger screw thread pitch
 AUGER_ANGLE = 30;           // Auger tube angle from vertical (degrees)
 

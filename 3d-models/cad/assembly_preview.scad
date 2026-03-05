@@ -35,14 +35,8 @@ use <04_auger_tube.scad>
 use <05_auger_screw.scad>
 use <06_motor_mount.scad>
 use <07_electronics_tray.scad>
-use <09_bowl.scad>
-use <10_bowl_bracket.scad>
 use <11_camera_mount.scad>
-use <13_gate_flap.scad>
-use <14_gate_hinge_mount.scad>
 use <15_antenna_arch.scad>
-use <16_gate_servo_bracket.scad>
-use <17_gate_bumper.scad>
 use <18_feet.scad>
 
 EXPLODE = 0;    // Set to 10–30 to explode parts apart for inspection
@@ -50,81 +44,137 @@ EXPLODE = 0;    // Set to 10–30 to explode parts apart for inspection
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN BODY — the box that sits on the floor
 // ═══════════════════════════════════════════════════════════════════════════
-main_body();
+color(COL_BODY) main_body();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HOPPER — sits on top of main body
 // ═══════════════════════════════════════════════════════════════════════════
-translate([15, 80, UNIT_H + EXPLODE * 2])
-    hopper();
+translate([15, 100, UNIT_H + 10 + EXPLODE * 2])
+    color(COL_FOOD) hopper();
 
 // HOPPER LID
-translate([15, 80, UNIT_H + 130 + EXPLODE * 4])
-    hopper_lid();
+translate([15, 100, UNIT_H + 10 + 130 + EXPLODE * 4])
+    color(COL_FOOD) hopper_lid();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUGER — vertical tube + screw, centered under hopper
+// Food exits side port, chute angles it forward toward bowl
+// ═══════════════════════════════════════════════════════════════════════════
+_auger_x = UNIT_W/2;
+_auger_y = 100 + 130/2;         // Hopper center Y (shifted back)
+_auger_top = UNIT_H + 10;       // Tube top raised above body
+_auger_bot = _auger_top - AUGER_TUBE_L;  // Bottom of tube
+
+translate([_auger_x, _auger_y, _auger_bot]) {
+    color(COL_FOOD) auger_tube();
+    color(COL_FOOD) auger_screw();
+}
+
+// MOTOR MOUNT — at bottom of vertical auger tube
+translate([_auger_x - 15, _auger_y - 15, _auger_bot - 20 - EXPLODE * 2])
+    color(COL_BODY) motor_mount();
+
+// CHUTE — short downward spout from auger exit port
+// Food drops from here into the bowl below. Kept short to clear the flaps.
+_chute_exit_y = _auger_y - AUGER_TUBE_OD/2;
+_chute_exit_z = _auger_bot + 10;
+
+translate([_auger_x, _chute_exit_y, _chute_exit_z])
+    rotate([135, 0, 0])  // Angled 45° forward+down
+        color(COL_FOOD, 0.6)
+        difference() {
+            cylinder(d=AUGER_TUBE_ID, h=35);
+            translate([0, 0, -1])
+                cylinder(d=AUGER_TUBE_ID - 5, h=37);
+        }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ROUND HALO — RFID antenna arch (semicircular ring)
-// Sits just outside the body front face. The cat walks through the ring.
-// Halo total_w = 154mm, centered on body (UNIT_W=160).
-// Halo back surface flush with Y=0 (body front face).
-// Feet extend forward to Y = -FOOT_D/2 ≈ -17.
+// Sits inside the body, arch peak over front of bowl.
+// Halo total_w = 146mm, centered on body (UNIT_W=160).
+// With 18° tilt, arch peak at Y_base + ~44mm.
+// Bowl front at Y=55, so base at Y≈11 puts peak over bowl front.
 // ═══════════════════════════════════════════════════════════════════════════
-// Center halo on body: offset_x = (160 - 154)/2 = 3
-// Position so halo tube center is at Y = -HALO_TUBE_OD/2 = -12
-// (back surface at Y=0, front surface at Y=-24)
-translate([(UNIT_W - 154)/2, -HALO_TUBE_OD/2 - EXPLODE, 0])
-    antenna_arch();
+translate([(UNIT_W - 146)/2, 11 - EXPLODE, 0])
+    color(COL_RFID) antenna_arch();
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BOWL — sits behind the gate, on the shelf inside the body
+// BOWL HOUSING — solid block with round bowl cavity, sits on shelf
 // ═══════════════════════════════════════════════════════════════════════════
-// Bowl centered in approach opening, behind gate (Y > GATE_SETBACK)
-translate([(UNIT_W - 100)/2, GATE_SETBACK + 15, FLOOR + EXPLODE])
-    bowl();
+_bowl_ox = (UNIT_W - BOWL_FLOOR_W) / 2;  // Center bowl on body
+_bowl_oy = GATE_SETBACK + 15;             // Behind gate
+_bowl_oz = FLOOR + EXPLODE;
 
-// BOWL BRACKET
-translate([(UNIT_W - 110)/2, GATE_SETBACK + 15, FLOOR - EXPLODE])
-    bowl_bracket();
+_bh_w = BOWL_FLOOR_W;
+_bh_d = BOWL_FLOOR_D + BOWL_OVERHANG;
+_bh_h = BOWL_SIDE_H + 3;                  // Up to just below flap level
+_bowl_r_top = min(_bh_w, _bh_d) / 2 - 6;
+_bowl_r_bot = _bowl_r_top - 10;
+_cavity_depth = _bh_h - 4;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GATE — blocks the approach opening. Swing-up: hinged at top.
-// Sits at GATE_SETBACK (40mm) inside the body — behind the halo.
-// When closed, it covers the approach from inside.
-// When open, it swings up into the body above the opening.
-// ═══════════════════════════════════════════════════════════════════════════
-translate([(UNIT_W - GATE_W)/2, GATE_SETBACK, FLOOR + EXPLODE])
-    gate_flap();
-
-// GATE HINGE MOUNT — at top of approach opening, at GATE_SETBACK depth
-translate([(UNIT_W - 120)/2, GATE_SETBACK, 130 - 20 + EXPLODE * 2])
-    gate_hinge_mount();
-
-// GATE SERVO BRACKET — inside body, above gate position
-translate([UNIT_W/2 - 20, GATE_SETBACK + 15, 130 + 5 + EXPLODE * 2])
-    gate_servo_bracket();
-
-// GATE BUMPER — inside body, where gate flap rests when fully open
-translate([UNIT_W/2 - 15, GATE_SETBACK + 5, UNIT_H - 25 + EXPLODE])
-    gate_bumper();
+translate([_bowl_ox, _bowl_oy, _bowl_oz])
+    color(COL_FOOD)
+    difference() {
+        fillet_box(_bh_w, _bh_d, _bh_h, r=4);
+        translate([_bh_w/2, _bh_d/2, _bh_h - _cavity_depth])
+            hull() {
+                translate([0, 0, _cavity_depth - 1])
+                    cylinder(r=_bowl_r_top, h=2);
+                cylinder(r=_bowl_r_bot, h=1);
+            }
+    }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CAMERA — mounted inside body, looking down toward the approach zone
+// BOWL COVER — two butterfly flaps with direct-drive servos
+// Hinged at outer bowl edges. Shown CLOSED (covering the bowl).
 // ═══════════════════════════════════════════════════════════════════════════
-translate([UNIT_W - 20, 20, 130 + EXPLODE])
-    camera_mount();
+
+_flap_w = BOWL_FLOOR_W / 2;     // Each flap = half the bowl width
+_flap_d = 95;                    // Covers bowl length
+_flap_t = 3;
+_flap_z = _bowl_oz + _bh_h + 1; // Just above bowl housing
+_bowl_cx = _bowl_ox + _bh_w / 2;
+_bowl_cy = _bowl_oy + _bh_d / 2;
+
+// Left flap (hinged at left edge, closed = flat)
+translate([_bowl_ox, _bowl_cy - _flap_d/2, _flap_z])
+    color(COL_GATE) cube([_flap_w, _flap_d, _flap_t]);
+
+// Right flap (hinged at right edge, closed = flat)
+translate([_bowl_ox + _bh_w - _flap_w, _bowl_cy - _flap_d/2, _flap_z])
+    color(COL_GATE) cube([_flap_w, _flap_d, _flap_t]);
+
+// Hinge pins (at outer edges of bowl housing)
+for (x = [_bowl_ox, _bowl_ox + _bh_w])
+    translate([x, _bowl_cy - _flap_d/2, _flap_z + _flap_t/2])
+        rotate([-90, 0, 0])
+            color([0.5, 0.5, 0.5]) cylinder(d=3.2, h=_flap_d);
+
+// Direct-drive servos (one per flap, behind the hinge line)
+_servo_y = _bowl_cy + _flap_d/2 + 3;
+for (x = [_bowl_ox, _bowl_ox + _bh_w - SERVO_D])
+    translate([x - SERVO_D/2 + SERVO_D/2, _servo_y, _flap_z - SERVO_H/2])
+        color(COL_GATE) cube([SERVO_D, SERVO_W, SERVO_H]);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAMERA — mounted on rear box front face, just below hopper, looking down
+// toward the approach zone and bowl
+// ═══════════════════════════════════════════════════════════════════════════
+translate([UNIT_W - 20, 105, UNIT_H - 30 + EXPLODE])
+    color(COL_BODY) camera_mount();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ELECTRONICS — rear interior of body
 // ═══════════════════════════════════════════════════════════════════════════
 translate([UNIT_W/2 - 39, UNIT_D - 68, FLOOR + EXPLODE])
-    electronics_tray();
+    color(COL_BODY) electronics_tray();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FEET — 4 corners of base
 // ═══════════════════════════════════════════════════════════════════════════
 for (x = [15, UNIT_W - 15]) for (y = [15, UNIT_D - 15])
     translate([x, y, -4 - EXPLODE])
-        foot();
+        color(COL_TPU) foot();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // REFERENCE: Cat silhouette (approximate, for scale check)

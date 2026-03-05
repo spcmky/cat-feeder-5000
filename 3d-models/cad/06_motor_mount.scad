@@ -10,17 +10,20 @@ MOTOR_TYPE = "N20";
 color(COL_BODY) motor_mount();
 
 module motor_mount() {
-    MW = 60; MD = 50; MH = 30;
-    SHAFT_H = 15; // Height of shaft center from base
+    MW = 30; MD = 30; MH = 20;
+    SHAFT_H = 10; // Height of shaft bore from base
 
     difference() {
         fillet_box(MW, MD, MH, r=3);
 
         if (MOTOR_TYPE == "N20") {
-            // N20 motor pocket: 12mm × 10mm × 25mm
-            translate([MW/2 - 6, MD/2 - 5, MH - 25])
-                cube([12, 10, 26]);
-            // Shaft bore
+            // N20 motor pocket: 12mm dia × 25mm deep (round)
+            translate([MW/2, MD/2, MH - 25])
+                cylinder(d=13, h=26);
+            // Gearbox pocket (rectangular, on top of motor)
+            translate([MW/2 - 6.5, MD/2 - 5.5, MH - 10])
+                cube([13, 11, 11]);
+            // Shaft bore (through bottom)
             translate([MW/2, MD/2, -0.1])
                 cylinder(d=6, h=SHAFT_H + 1);
         } else {
@@ -37,7 +40,7 @@ module motor_mount() {
         }
 
         // Body mount holes (M3 clearance, 4 corners)
-        for (x=[8, MW-8]) for (y=[8, MD-8])
+        for (x=[6, MW-6]) for (y=[6, MD-6])
             translate([x, y, -0.1]) m3_clear(h=6);
     }
 }
