@@ -21,8 +21,11 @@ HTML = """<!doctype html>
 <title>cat_id labelling</title>
 <style>
   body { font-family: -apple-system, sans-serif; margin: 0; background: #111; color: #eee; }
-  header { position: sticky; top: 0; background: #1b1b1b; padding: 10px 16px;
-           display: flex; gap: 18px; align-items: center; border-bottom: 1px solid #333; }
+  /* z-index is load-bearing: the figures below are position:relative, so
+     without it they paint over the sticky header once the page scrolls */
+  header { position: sticky; top: 0; z-index: 10; background: #1b1b1b; padding: 10px 16px;
+           display: flex; gap: 18px; align-items: center; border-bottom: 1px solid #333;
+           flex-wrap: wrap; }
   header b { font-size: 15px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
           gap: 8px; padding: 12px; }
