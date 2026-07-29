@@ -44,13 +44,29 @@ val_tf = transforms.Compose([
     transforms.Normalize(MEAN, STD),
 ])
 
-full = datasets.ImageFolder(DATA, transform=train_tf,
-                            is_valid_file=lambda p: p.endswith(".jpg")
-                            and os.path.basename(os.path.dirname(p)) in CLASSES)
+class LabelledFolder(datasets.ImageFolder):
+    """ImageFolder over CLASSES only.
+
+    data_v2/ also holds unlabelled/, which plain ImageFolder picks up as a
+    class and then dies on because is_valid_file rejects every file in it.
+    """
+
+    def find_classes(self, directory):
+        missing = [c for c in CLASSES
+                   if not os.path.isdir(os.path.join(directory, c))]
+        if missing:
+            raise SystemExit(f"missing class dirs {missing} in {directory} - "
+                             "run apply_labels.py first")
+        return CLASSES, {c: i for i, c in enumerate(CLASSES)}
+
+
+def load(tf):
+    return LabelledFolder(DATA, transform=tf,
+                          is_valid_file=lambda p: p.endswith(".jpg"))
+
+
+full = load(train_tf)
 print("Classes:", full.classes)
-if full.classes != CLASSES:
-    raise SystemExit(f"expected {CLASSES}, found {full.classes} - "
-                     "run apply_labels.py first")
 
 # --- grouped split: keep a whole visit on one side of the split ---
 starts = {}
@@ -72,19 +88,34 @@ for i, (path, _) in enumerate(full.samples):
     by_visit[visit_of[path]].append(i)
 
 visits = sorted(by_visit)
-gen = torch.Generator().manual_seed(42)
-order = torch.randperm(len(visits), generator=gen).tolist()
 n_val_visits = max(1, int(0.25 * len(visits)))
-val_visits = {visits[i] for i in order[:n_val_visits]}
+
+# cat_b is rare and clustered into few visits, so a plain random split can
+# leave zero of them in val (making val accuracy meaningless for Casper) or
+# zero in train. Resample seeds until both sides hold every class.
+val_visits = None
+for seed in range(200):
+    gen = torch.Generator().manual_seed(seed)
+    order = torch.randperm(len(visits), generator=gen).tolist()
+    cand = {visits[i] for i in order[:n_val_visits]}
+    v_lab = {full.targets[i] for v in cand for i in by_visit[v]}
+    t_lab = {full.targets[i] for v in visits if v not in cand
+             for i in by_visit[v]}
+    if len(v_lab) == len(CLASSES) and len(t_lab) == len(CLASSES):
+        val_visits = cand
+        print(f"visit split seed {seed}: all {len(CLASSES)} classes on both sides")
+        break
+if val_visits is None:
+    raise SystemExit(
+        "could not find a visit split with every class on both sides - "
+        "some class is confined to too few visits; label more of it")
 
 val_idx = [i for v in val_visits for i in by_visit[v]]
 train_idx = [i for v in visits if v not in val_visits for i in by_visit[v]]
 print(f"{len(visits)} visits -> train {len(train_idx)} crops / "
       f"val {len(val_idx)} crops ({len(val_visits)} held-out visits)")
 
-val_base = datasets.ImageFolder(DATA, transform=val_tf,
-                                is_valid_file=lambda p: p.endswith(".jpg")
-                                and os.path.basename(os.path.dirname(p)) in CLASSES)
+val_base = load(val_tf)
 train_loader = DataLoader(Subset(full, train_idx), batch_size=16, shuffle=True)
 val_loader = DataLoader(Subset(val_base, val_idx), batch_size=16)
 

@@ -11,6 +11,7 @@ import base64
 import datetime
 import json
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data_v2")
@@ -112,9 +113,24 @@ def is_dark_object(m):
 
 
 def main():
+    review = "--review" in sys.argv
+    labels = {}
+    labels_path = os.path.join(HERE, "labels.json")
+    if review:
+        if not os.path.exists(labels_path):
+            raise SystemExit("--review needs labels.json next to this script")
+        labels = json.load(open(labels_path))
+
     meta = json.load(open(os.path.join(DATA, "meta.json")))
-    # darkest first, so the false positives cluster at the top of the page
-    meta.sort(key=lambda m: (m["mean"], m["t"]))
+    if review:
+        # group by current label so a wrong one stands out against its
+        # neighbours; within a group, darkest first
+        order = {c: i for i, c in enumerate(["cat_a", "cat_b", "not_cat", ""])}
+        meta.sort(key=lambda m: (order.get(labels.get(m["id"], ""), 9),
+                                 m["mean"], m["t"]))
+    else:
+        # darkest first, so the false positives cluster at the top of the page
+        meta.sort(key=lambda m: (m["mean"], m["t"]))
 
     rows = []
     for m in meta:
@@ -123,18 +139,25 @@ def main():
             continue
         with open(path, "rb") as fh:
             src = base64.b64encode(fh.read()).decode()
+        if review:
+            guess = labels.get(m["id"], "")
+        else:
+            guess = "not_cat" if is_dark_object(m) else ""
         rows.append({
             "id": m["id"],
             "src": "data:image/jpeg;base64," + src,
             "t": datetime.datetime.fromtimestamp(m["t"]).strftime("%m-%d %H:%M:%S"),
-            "guess": "not_cat" if is_dark_object(m) else "",
+            "guess": guess,
         })
 
     out = os.path.join(HERE, "label.html")
     with open(out, "w") as fh:
         fh.write(HTML.replace("__ROWS__", json.dumps(rows)))
     seeded = sum(1 for r in rows if r["guess"])
-    print(f"wrote {out} with {len(rows)} crops ({seeded} pre-seeded not_cat)")
+    mode = "review (grouped by current label)" if review else "fresh"
+    print(f"wrote {out} with {len(rows)} crops - {mode}, {seeded} pre-set")
+    if review:
+        print("re-export when done, then re-run apply_labels.py")
 
 
 if __name__ == "__main__":
